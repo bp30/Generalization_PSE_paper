@@ -32,8 +32,11 @@ source("C:/Users/dpen466/Google Drive/Phd (1)/Experiment/Studies/Data/IPE/source
 palette <- c("#eeaa7b", "#00b159", "#00aedb", "#F8766D", "#9590FF", "#CC9933", "#0000FF")
 ```
 
-# Data setup
 
+
+
+# Experiment 1
+## Data setup
 ```{r}
 # Loading data
 IPEG.df <- read.csv('IPEG_fulldata_N=30.csv', header = T)
@@ -68,8 +71,6 @@ IPEG.df <- IPEG.df %>%
 ```
 
 
-
-# Experiment 1: Bayesian cumulative link mixed model
 ## Model 1
 ```{r}
 # Model:
@@ -133,8 +134,6 @@ model2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
                                 prior(exponential(1), class = sd),
                                 prior(lkj(1), class = cor)),
                    iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-
-
 saveRDS(model2_exp1, file = 'model2_exp1.rds')
 
 # model2_exp1 <- readRDS("model2_exp1.rds")
@@ -160,9 +159,9 @@ latent_SD(posterior_m2_exp1)
 ```{r}
 # Violin plot (Figure XX)
 gen_effect_exp1 <- cbind.data.frame("S-A-" = posterior_m2_exp1$b_Match_conditionSMAM,
-                               "S-A+" = posterior_m2_exp1$b_Match_conditionSMAP, 
-                               "S+A-" = posterior_m2_exp1$b_Match_conditionSPAM, 
-                               "S+A+" = posterior_m2_exp1$b_Match_conditionSPAP)
+                                    "S-A+" = posterior_m2_exp1$b_Match_conditionSMAP, 
+                                    "S+A-" = posterior_m2_exp1$b_Match_conditionSPAM, 
+                                    "S+A+" = posterior_m2_exp1$b_Match_conditionSPAP)
 gen_effect_exp1.df <- gen_effect_exp1
 gen_effect_exp1 <- gen_effect_exp1 %>% gather("S-A-", "S-A+", "S+A-", "S+A+", key = Condition, value = Posterior)
 violin_gen1 <- violin_bayes(gen_effect_exp1, HDI_range = c(0.055, 0.945))[[1]]
@@ -173,9 +172,9 @@ violin_gen1 +
                               "S+A-" = "S+A- > Control", 
                               "S+A+" = "S+A+ > Control"))
   
-# Summaries
+# Summary
 violin_bayes(gen_effect_exp1, HDI_range = c(0.055, 0.945))[[2]]
-#pd
+# pd
 p_direction (gen_effect_exp1.df)
 # OR
 posterior_summary(exp(gen_effect_exp1.df), probs = c(0.055, 0.945))
@@ -184,22 +183,21 @@ rope(gen_effect_exp1.df, ci = 1, range = c(-0.18, 0.18))
 #---------------------------------------------------------------------------------------------------------------------------------------------
 # Contrasts between the four imagine helping match conditions
 cond_contrasts_exp1 <- cbind.data.frame ("S-A-<S-A+" = gen_effect_exp1.df$`S-A+` - gen_effect_exp1.df$`S-A-`, 
-                                    "S-A-<S+A-" = gen_effect_exp1.df$`S+A-` - gen_effect_exp1.df$`S-A-`,
-                                    "S-A-<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S-A-`,
-                                    "S-A+<S+A-" = gen_effect_exp1.df$`S+A-` - gen_effect_exp1.df$`S-A+`,
-                                    "S-A+<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S-A+`,
-                                    "S+A-<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S+A-`)
+                                         "S-A-<S+A-" = gen_effect_exp1.df$`S+A-` - gen_effect_exp1.df$`S-A-`,
+                                         "S-A-<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S-A-`,
+                                         "S-A+<S+A-" = gen_effect_exp1.df$`S+A-` - gen_effect_exp1.df$`S-A+`,
+                                         "S-A+<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S-A+`,
+                                         "S+A-<S+A+" = gen_effect_exp1.df$`S+A+` - gen_effect_exp1.df$`S+A-`)
 colnames(cond_contrasts_exp1) <- c("S-A-<S-A+", "S-A-<S+A-","S-A-<S+A+", "S-A+<S+A-", "S-A+<S+A+", "S+A-<S+A+")
 cond_contrasts_exp1.df<- cond_contrasts_exp1
 cond_contrasts_exp1 <- cond_contrasts_exp1 %>% gather("S-A-<S-A+", "S-A-<S+A-","S-A-<S+A+", "S-A+<S+A-", "S-A+<S+A+", "S+A-<S+A+", 
                                                       key = Condition, value = Posterior)
 contrast_plot1 <- violin_bayes(cond_contrasts_exp1, HDI_range = c(0.055, 0.945))[[1]]
-contrast_plot1 + 
-  labs(x = "Condition Contrast", y = "Logit")
+contrast_plot1 + labs(x = "Condition Contrast", y = "Logit")
 
-# Summaries
+# Summary
 violin_bayes(cond_contrasts_exp1, HDI_range=c(0.055, 0.945))[[2]]
-# pd and direction
+# pd
 p_direction (cond_contrasts_exp1.df)
 # % in ROPE
 rope(cond_contrasts_exp1.df, ci = 1, range = c(-0.18, 0.18))
@@ -211,7 +209,7 @@ Gen_plot_exp1 <- conditional_effects(model2_exp1, categorical = T)
 plot(Gen_plot_exp1)[[1]] +
   scale_x_discrete(labels = c("Control", "S-A-", "S-A+", "S+A-", "S+A+")) +
   theme_classic() +
-  xlab("Conditions") +
+  xlab("Condition") +
   ylim (0, 0.45)
 ```
 
@@ -221,7 +219,7 @@ plot(Gen_plot_exp1)[[1]] +
 * Models to be compared
 ** 1) a null model (M0): all conditions (including control) are equal
 ** 2) Unrestricted model (Mu1): Control != S-A- != S+A- != S-A+ != S+A+
-** 3) Unrestricted model (Mu2): Control != S-A- = S+A- = S-A+ = S+A+
+** 3) Unrestricted model (Mu2): Control != [S-A- = S+A- = S-A+ = S+A+]
 ** 5) Theory-driven model (M1): Control < S-A- < S+A- ~= S-A+ < S+A+
 ** 6) Data-driven model (M2): Control < [S-A- = S+A- = S-A+ = S+A+]
 
@@ -234,7 +232,7 @@ m0_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
                             prior(normal(0,1.2), class = Intercept),
                             prior(exponential(1), class = sd)), 
                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-saveRDS(m0_exp1, file = 'm0_exp1.rds')
+# saveRDS(m0_exp1, file = 'm0_exp1.rds')
 
 # m0_exp1 <- readRDS("m0_exp1.rds")
 
@@ -245,7 +243,7 @@ mu1_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
                              prior(normal(0, 1.2), class = Intercept),
                              prior(exponential(1), class = sd)),
                    iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-saveRDS(mu1_exp1, file = 'mu1_exp1.rds')
+# saveRDS(mu1_exp1, file = 'mu1_exp1.rds')
 
 # mu1_exp1 <- readRDS("mu1_exp1.rds")
 ## Extract posterior
@@ -259,7 +257,7 @@ mu2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
                         prior(exponential(1), class = sd)),
                 iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, 
                 save_all_pars = T, control = list(adapt_delta = 0.99))
-saveRDS(mu2_exp1, file = 'mu2_exp1.rds')
+# saveRDS(mu2_exp1, file = 'mu2_exp1.rds')
 
 # mu2_exp1 <- readRDS("mu2_exp1.rds")
 ## Extract posterior
@@ -303,11 +301,274 @@ print(paste0("M1/M0: ", BF_M1vsM0_exp1))
 print(paste0("Mu/M0: ", BF_Mu1vsM0_exp1$bf))
 ```
 
+# Experiment 2
+## Data setup
+```{r}
+# Loading data
+IPEG2.df <- read.csv('IPEG2_fulldata_N=30.csv', header = T)
+
+# Remove deleted trials from data frame
+IPEG2.df <- IPEG2.df[complete.cases(IPEG2.df$Condition), ]
+
+# Convert Story_ID and Condition vectors into factors and ensure Identify condition is set as the reference group
+IPEG2.df$Sim_SID <- as.factor(IPEG2.df$Sim_SID)
+IPEG2.df$HS_ID <- as.factor(IPEG2.df$HS_ID)
+IPEG2.df$Conditions <- as.factor(IPEG2.df$Conditions)
+levels(IPEG2.df$Conditions) <- c('Identify', 'Imagine')
 
 
+# Data transformations 
+## Generate the five factor variable for Match conditions
+IPEG2.df$Match_condition <- IPEG2.df$Match + 1
+IPEG2.df$Match_condition[IPEG2.df$Conditions == "Identify"] <- 1
+IPEG2.df$Match_condition <- as.factor(IPEG2.df$Match_condition)
+levels(IPEG2.df$Match_condition) <- c("Identify","HT-HS-", "HT+HS-","HT-HS+", "HT+HS+")
+
+## Effect code and dummy
+IPEG2.df <- IPEG2.df %>% 
+              mutate(
+                # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
+                HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
+                HT_age_c = ifelse(HT_age == 'Old', 1, -1),
+                # Create a dummy variable= for the condition variable
+                dummy_img = as.numeric (Conditions == 'Imagine'),
+                # Ordered restricted contrast
+                ORM_code = ifelse(Match_condition == 'Identify', "Identify",
+                                  ifelse(Match_condition == 'HT+HS+','HT+HS+', "Imagine")))
+IPEG2.df$ORM_code <- as.factor (IPEG2.df$ORM_code)
+IPEG2.df$ORM_code <- relevel(IPEG2.df$ORM_code, ref = "Identify")
+```
+
+## Model 1
+```{r}
+model1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+               bf(Help ~ Conditions + HT_sex_c + HT_age_c + (Conditions|participant) + (Conditions|Sim_SID) + (Conditions|HTFace_ID) +
+                 (Conditions|STFace_ID) + (Conditions|HS_ID)) +
+               lf(disc ~ 0 + Conditions, cmc = F),
+                  prior = c(prior(normal(0,1), class = b),
+                            prior(normal(0,1.2), class = Intercept),
+                            prior(exponential(1), class = sd),
+                            prior(lkj(1), class = cor)),
+               iter = 7000,warmup = 2000, chains = 8, cores = 8, seed = 20, 
+               sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
+#saveRDS(model1_exp2, file = 'model1_exp2.rds')
+
+# model1_exp2 <- readRDS("model1_exp2.rds")
+# Diagnostic Checks: pp check and traceplots
+pp_check(model1_exp2)
+plot(model1_exp2)
+# Prior predictive simulation 
+prior_sim(model1_exp2, c("sd_participant", 'cor_participant', "b"))
+# Rhat and sample sizes
+bayes_samples(model1_exp2)
+
+# Summary
+summary(model1_exp2, prob = 0.89)
+# pd
+p_direction(model1_exp2, parameters = "b_Conditions")
+# % in ROPE
+rope(model1_exp2, ci = 1, range = c(-0.18, 0.18), parameters = "b_Conditions")
+
+# Extract posterior samples 
+set.seed(67); posterior_m1_exp2 <- posterior_samples(model1_exp2) 
+# OR
+OR_m1_exp2 <- exp(posterior_m1_exp2$b_Conditions)
+posterior_summary(OR_m1_exp2, probs = c(0.055, 0.945))
+# Latent SD of conditions
+latent_SD(posterior_m1_exp2)
+```
+### Plots: Figure XX
+```{r}
+# Plot the predicted probability of each category on the outcome measure for each condition
+PSE_plot_exp2 <- conditional_effects(model1_exp2, categorical = T)
+plot(PSE_plot_exp1)[[1]] +
+  scale_x_discrete(labels = c("Control", "Imagine Helping")) +
+  theme_classic() +
+  xlab("Experimental Condition") +
+  ylim (0, 0.45)
+```
 
 
+## Model 2 
+```{r}
+model2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+                   bf(Help ~ Match_condition + HT_sex_c + HT_age_c + (Match_condition|participant) + (Match_condition|Sim_SID) +  
+                     (Match_condition|HTFace_ID) + (Match_condition|STFace_ID) + (1|HS_ID)) +
+                   lf(disc ~ 0 + Match_condition, cmc = F),
+                      prior = c(prior(normal(0,1), class = b),
+                                prior(normal(0,1.2), class = Intercept),
+                                prior(exponential(1), class = sd),
+                                prior(lkj(1), class = cor)),
+                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+                  sample_prior =T, save_all_pars = T, control = list(adapt_delta = 0.99))
+# saveRDS(model2_exp2, file = 'model2_exp2.rds')
 
+# model2_exp2 <- readRDS("model2_exp2.rds")
+# Diagnostic Checks: pp check and traceplots
+pp_check(model2_exp2)
+plot(model2_exp2)
+# Prior predictive simulation 
+prior_sim(model2_exp2, c("sd_participant", 'cor_participant', "b"))
+# Rhat and sample sizes
+bayes_samples(model2_exp2)
+
+# Summary
+summary(model2_exp2, prob = 0.89)
+# pd
+p_direction(model2_exp2, parameters = "b_Match_condition")
+
+# Extract posterior samples 
+set.seed(67); posterior_m2_exp2 <- posterior_samples(model2_exp2) 
+# Latent SD of conditions
+latent_SD(posterior_m2_exp2)
+```
+
+### Plots: Figure XX
+```{r}
+# Violin plot (Figure XX)
+gen_effect_exp2 <- cbind.data.frame("HT-HS-" = posterior_m2_exp2$b_Match_conditionHTMHSM,
+                                    "HT+HS-" = posterior_m2_exp2$b_Match_conditionHTPHSM,
+                                    "HT-HS+" = posterior_m2_exp2$b_Match_conditionHTMHSP,
+                                    "HT+HS+" = posterior_m2_exp2$b_Match_conditionHTPHSP)
+gen_effect_exp2.df <- gen_effect_exp2
+gen_effect_exp2 <- gen_effect_exp2 %>% gather("HT-HS-", "HT+HS-", "HT-HS+", "HT+HS+", key = Condition, value = Posterior)
+violin_gen2 <- violin_bayes(gen_effect_exp2, HDI_range = c(0.055, 0.945))[[1]]
+violin_gen2 +
+  labs(x = "Condition Contrast", y = "Logit") +
+  scale_x_discrete(labels = c("HT-HS-" = "HT-HS- > Control", 
+                              "HT+HS-" = "HT+HS- > Control", 
+                              "HT-HS+" = "HT-HS+ > Control", 
+                              "HT+HS+" = "HT+HS+ > Control"))
+# Summary
+violin_bayes(gen_effect_exp2, HDI_range = c(0.055, 0.945))[[2]]
+# pd
+p_direction (gen_effect_exp2.df)
+# OR 
+posterior_summary(exp(gen_effect_exp2.df), probs = c(0.055, 0.945))
+# % in ROPE
+rope(gen_effect_exp2.df, ci = 1, range = c(-0.18, 0.18))
+#---------------------------------------------------------------------------------------------------------------------------------------------
+# Contrasts between the four imagine helping similarity conditions
+cond_contrasts_exp2 <- cbind.data.frame ("HT-HS-<HT+HS-" = gen_effect_exp2.df$`HT+HS-` - gen_effect_exp2.df$`HT-HS-`, 
+                                         "HT-HS-<HT-HS+" = gen_effect_exp2.df$`HT-HS+` - gen_effect_exp2.df$`HT-HS-`,
+                                         "HT-HS-<HT+HS+" = gen_effect_exp2.df$`HT+HS+` - gen_effect_exp2.df$`HT-HS-`,
+                                         "HT+HS-<HT-HS+" = gen_effect_exp2.df$`HT-HS+` - gen_effect_exp2.df$`HT+HS-`,
+                                         "HT+HS-<HT+HS+" = gen_effect_exp2.df$`HT+HS+` - gen_effect_exp2.df$`HT+HS-`,
+                                         "HT-HS+<HT+HS+" = gen_effect_exp2.df$`HT+HS+` - gen_effect_exp2.df$`HT-HS+`)
+colnames(cond_contrasts_exp2) <- c("HT-HS-<HT+HS-","HT-HS-<HT-HS+","HT-HS-<HT+HS+","HT+HS-<HT-HS+", "HT+HS-<HT+HS+", "HT-HS+<HT+HS+")
+cond_contrasts_exp2.df <- cond_contrasts_exp2
+cond_contrasts_exp2 <- cond_contrasts_exp2 %>% gather("HT-HS-<HT+HS-", "HT-HS-<HT-HS+", "HT-HS-<HT+HS+", "HT+HS-<HT-HS+",
+                                                      "HT+HS-<HT+HS+", "HT-HS+<HT+HS+", key = Condition, value = Posterior)
+contrast_plot2 <- violin_bayes(cond_contrasts_exp2, HDI_range = c(0.055, 0.945))[[1]]
+contrast_plot2 + labs(x = "Condition Contrasts", y = "Logit")
+
+# Summary
+violin_bayes(cond_contrasts_exp2, HDI_range = c(0.055, 0.945))[[2]]
+# pd
+p_direction (cond_contrasts_exp2.df)
+# % in ROPE
+rope(cond_contrasts_exp2.df, ci = 1, range = c(-0.18, 0.18))
+# OR 
+posterior_summary(exp(cond_contrasts_exp2.df), probs = c(0.055, 0.945))
+#----------------------------------------------------------------------------------------------------------------------------------------------
+# Plot the predicted probability of each category on the outcome measure for each condition (Figure XX)
+Gen_plot_exp2 <- conditional_effects(model2_exp2, categorical = T)
+plot(Gen_plot_exp2)[[1]] +
+  scale_x_discrete(labels = c("Control", "HT-HS-", "HT+HS-", "HT-HS+", "HT+HS+")) +
+  theme_classic() +
+  xlab("Condition") +
+  ylim (0, 0.45)
+```
+
+## Order-restricted model comparison
+* Models to be compared
+** 1) Null model (M0): All conditions (including control) are equal
+** 2) Unrestricted model (Mu1): Control != HT-HS- != HT+HS- != HT-HS+ != HT+HS+
+** 3) Unrestricted model (Mu2): Control != [HT-HS- = HT+HS- = HT-HS+] != HT+HS+
+** 4) Theory-driven model (M1): Control < HT-HS- < HT+HS- ~= HT-HS+ < HT+HS+
+** 5) Data-driven model (M2): Control < [HT-HS- = HT+HS- = HT-HS+] < HT+HS+
+
+### Model set up
+```{r}
+# M0 model:
+m0_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+               Help ~ HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+                  prior = c(prior(normal(0, 1), class = b),
+                            prior(normal(0, 1.2), class = Intercept),
+                            prior(exponential(1), class = sd)),
+                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20,
+                  sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
+#saveRDS(m0_exp2, file = 'm0_exp2.rds')
+
+# Mu1 model:
+mu1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+                Help ~ Match_condition + HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+                   prior = c(prior(normal(0, 1), class = b),
+                            prior(normal(0, 1.2), class = Intercept),
+                            prior(exponential(1), class = sd)),
+                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+                  sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
+#saveRDS(mu1_exp2, file = 'mu1_exp2.rds')
+
+# mu1_exp2 <- readRDS("mu1_exp2.rds")
+set.seed(20); mu1_posterior_exp2 <- posterior_samples(mu1_exp2) 
+
+# Mu2 model:
+mu2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+                  Help ~ ORM_code + HT_sex_c + HT_age_c + (1|participant) +
+                          (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+                  prior = c(prior(normal (0, 1), class = b),
+                            prior(normal(0, 1.2), class = Intercept),
+                            prior(exponential(1), class = sd)),
+                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+                  sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
+#saveRDS(mu2_exp2, file = 'mu2_exp2.rds')
+
+# mu2_exp2 <- readRDS("mu2_exp2.rds")
+set.seed(20); mu2_posterior_exp2 <- posterior_samples(mu2_exp2) 
+
+# M1 model:
+m1_exp2 <- (mu1_posterior_exp2[, "b_Match_conditionHTMHSM"] > 0) & 
+           (mu1_posterior_exp2[, "b_Match_conditionHTMHSM"] < mu1_posterior_exp2[, "b_Match_conditionHTPHSM"]) &
+           (abs(mu1_posterior_exp2[, "b_Match_conditionHTPHSM"] - mu1_posterior_exp2[, "b_Match_conditionHTMHSP"]) <= 0.18) |
+           (mu1_posterior_exp2[, "b_Match_conditionHTPHSM"] > mu1_posterior_exp2[, "b_Match_conditionHTMHSP"]) |
+           (mu1_posterior_exp2[, "b_Match_conditionHTPHSM"] < mu1_posterior_exp2[, "b_Match_conditionHTMHSP"]) &
+           (mu1_posterior_exp2[, "b_Match_conditionHTPHSP"] > mu1_posterior_exp2[, "b_Match_conditionHTMHSP"])
+
+# M2 model: 
+m2_exp2 <- (mu2_posterior_exp2[, "b_ORM_codeImagine"] > 0) |
+           (abs(mu2_posterior_exp2[, "b_ORM_codeImagine"]) <= 0.18) &
+           (mu2_posterior_exp2[, "b_ORM_codeImagine"] < mu2_posterior_exp2[, "b_ORM_codeHTPHSP"]) |
+           (abs(mu2_posterior_exp2[, "b_ORM_codeImagine"] - mu2_posterior_exp2[, "b_ORM_codeHTPHSP"]) <= 0.18) &
+           (mu2_posterior_exp2[, "b_ORM_codeHTPHSP"] > 0)
+```
+#### Bayes Factors
+```{r}
+# Mu1/M0
+set.seed(67); (BF_Mu1vsM0_exp2 <- bayes_factor(mu1_exp2, m0_exp2))
+# Mu2/M0
+set.seed(67); (BF_Mu2vsM0_exp2 <- bayes_factor(mu2_exp2, m0_exp2))
+# M1/Mu1
+(BF_M1vsMu1_exp2 <- restricted_BF(m1_exp2, 4e4, 5, 2))
+# M2/Mu2
+(BF_M2vsMu2_exp2 <- restricted_BF(m2_exp2, 4e4, 3))
+# By transitivity
+BF_M0vsM1_exp2 <- 1/(BF_Mu1vsM0_exp2$bf * BF_M1vsMu1_exp2)
+BF_M2vsM0_exp2 <- BF_M2vsMu2_exp2 * BF_Mu2vsM0_exp2$bf
+BF_M2vsM1_exp2 <- BF_M2vsM0_exp2 * BF_M0vsM1_exp2
+BF_M2vsMu1_exp2 <- BF_M2vsM0_exp2 / BF_Mu1vsM0_exp2$bf
+BF_M1vsMu2_exp2 <- (1/BF_M2vsM1_exp2) * BF_M2vsMu2_exp2 
+
+# BFs
+print(paste0("M2/M1: ", BF_M2vsM1_exp2))
+print(paste0("M2/Mu: ", BF_M2vsMu2_exp2))
+print(paste0("M2/M0: ", BF_M2vsM0_exp2))
+
+print(paste0("M1/Mu: ", BF_M1vsMu2_exp2))
+print(paste0("M1/M0: ", 1/BF_M0vsM1_exp2))
+
+print(paste0("Mu/M0: ", BF_Mu2vsM0_exp2$bf))
+```
 
 
 
