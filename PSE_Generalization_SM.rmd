@@ -38,36 +38,26 @@ palette <- c("#eeaa7b", "#00b159", "#00aedb", "#F8766D", "#9590FF", "#CC9933", "
 # Experiment 1
 ## Data setup
 ```{r}
-# Loading data
-IPEG.df <- read.csv('IPEG_fulldata_N=30.csv', header = T)
-
-# Remove deleted trials from data frame
-IPEG.df <- IPEG.df[complete.cases(IPEG.df$Condition), ]
-
-# Convert Story_ID and Condition vectors into factors and ensure Identify condition is set as the reference group
-IPEG.df$Story_ID <- as.factor(IPEG.df$Story_ID)
-IPEG.df$Conditions <- as.factor(IPEG.df$Conditions)
-levels(IPEG.df$Conditions) <- c('Identify', 'Imagine')
-
-# Data transformations 
-## Generate the five factor variable for Match conditions
-IPEG.df$Match_condition<- IPEG.df$Match + 1
-IPEG.df$Match_condition[IPEG.df$Conditions == "Identify"] <- 1
-IPEG.df$Match_condition <- as.factor(IPEG.df$Match_condition)
-levels(IPEG.df$Match_condition) <- c("Identify", "S-A-", "S-A+","S+A-", "S+A+")
-
-# Data transformations 
-IPEG.df <- IPEG.df %>% 
-              mutate(
-                # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
-                HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
-                HT_age_c = ifelse(HT_age == 'Old', 1, -1),
-                # Create a dummy variable = for the condition and match variables
-                dummy_img = as.numeric (Conditions == 'Imagine'),
-                dummy_SAMM = as.numeric(Match_condition == "S-A-"),
-                dummy_SMMAM = as.numeric(Match_condition == "S-A+"),
-                dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
-                dummy_SAM = as.numeric(Match_condition == "S+A+"))
+# Load data and data transformations 
+IPEG.df <- read.csv('IPEG_fulldata_N=30.csv', header = T) %>% 
+              # Remove deleted trials
+              filter(complete.cases(Conditions)) %>%
+              # Recode conditions
+              mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
+                     Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
+                     Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
+                     Match_condition = recode(Match_condition, '0' = "Identify", '1' = "S-A-", '2' = "S-A+", '3' = "S+A-", '4' = "S+A+"),
+                     # Convert story to factor
+                     Story_ID = as.factor(Story_ID),
+                     # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
+                     HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
+                     HT_age_c = ifelse(HT_age == 'Old', 1, -1),
+                     # Create a dummy variable = for the condition and match variables
+                     dummy_img = as.numeric (Conditions == 'Imagine'),
+                     dummy_SAMM = as.numeric(Match_condition == "S-A-"),
+                     dummy_SMMAM = as.numeric(Match_condition == "S-A+"),
+                     dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
+                     dummy_SAM = as.numeric(Match_condition == "S+A+"))
 ```
 
 
@@ -312,39 +302,34 @@ print(paste0("Mu/M0: ", BF_Mu1vsM0_exp1$bf))
 # Experiment 2
 ## Data setup
 ```{r}
-# Loading data
-IPEG2.df <- read.csv('IPEG2_fulldata_N=30.csv', header = T)
-
-# Remove deleted trials from data frame
-IPEG2.df <- IPEG2.df[complete.cases(IPEG2.df$Condition), ]
-
-# Convert Story_ID and Condition vectors into factors and ensure Identify condition is set as the reference group
-IPEG2.df$Sim_SID <- as.factor(IPEG2.df$Sim_SID)
-IPEG2.df$HS_ID <- as.factor(IPEG2.df$HS_ID)
-IPEG2.df$Conditions <- as.factor(IPEG2.df$Conditions)
-levels(IPEG2.df$Conditions) <- c('Identify', 'Imagine')
-
-
-# Data transformations 
-## Generate the five factor variable for Match conditions
-IPEG2.df$Match_condition <- IPEG2.df$Match + 1
-IPEG2.df$Match_condition[IPEG2.df$Conditions == "Identify"] <- 1
-IPEG2.df$Match_condition <- as.factor(IPEG2.df$Match_condition)
-levels(IPEG2.df$Match_condition) <- c("Identify","HT-HS-", "HT+HS-","HT-HS+", "HT+HS+")
-
-## Effect code and dummy
-IPEG2.df <- IPEG2.df %>% 
-              mutate(
-                # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
-                HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
-                HT_age_c = ifelse(HT_age == 'Old', 1, -1),
-                # Create a dummy variable= for the condition variable
-                dummy_img = as.numeric (Conditions == 'Imagine'),
-                # Ordered restricted contrast
-                ORM_code = ifelse(Match_condition == 'Identify', "Identify",
-                                  ifelse(Match_condition == 'HT+HS+','HT+HS+', "Imagine")))
-IPEG2.df$ORM_code <- as.factor (IPEG2.df$ORM_code)
-IPEG2.df$ORM_code <- relevel(IPEG2.df$ORM_code, ref = "Identify")
+# Load data and data transformation
+test <- read.csv('IPEG2_fulldata_N=30.csv', header = T) %>% 
+              # Remove deleted trials
+              filter(complete.cases(Conditions)) %>%
+              # Recode conditions
+              mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
+                     Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
+                     Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
+                     Match_condition = recode(Match_condition, '0' = "Identify", 
+                                                               '1' = "HT-HS-", 
+                                                               '2' = "HT+HS-", 
+                                                               '3' = "HT-HS+", 
+                                                               '4' = "HT+HS+"),
+                     # Convert clusters to factor
+                     Sim_SID = as.factor(Sim_SID),
+                     HS_ID = as.factor(HS_ID),
+                     # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
+                     HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
+                     HT_age_c = ifelse(HT_age == 'Old', 1, -1),
+                     # Create a dummy variable for the condition and match variables
+                     dummy_img = as.numeric (Conditions == 'Imagine'),
+                     dummy_SAMM = as.numeric(Match_condition == "HT-HS-"),
+                     dummy_SMMAM = as.numeric(Match_condition == "HT+HS-"),
+                     dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
+                     dummy_SAM = as.numeric(Match_condition == "S+A+"),
+                     ORM_code = ifelse(Match_condition == 'Identify', "Identify",
+                                ifelse(Match_condition == 'HT+HS+','HT+HS+', "Imagine")),
+                     ORM_code = relevel(as.factor(ORM_code), ref = 'Identify'))
 ```
 
 ## Model 1
