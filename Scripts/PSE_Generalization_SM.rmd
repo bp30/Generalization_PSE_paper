@@ -32,52 +32,53 @@ source("C:/Users/dpen466/Google Drive/Phd (1)/Experiment/Studies/Data/IPE/source
 palette <- c("#eeaa7b", "#00b159", "#00aedb", "#F8766D", "#9590FF", "#CC9933", "#0000FF")
 ```
 
-
-
-
 # Experiment 1
 ## Data setup
 ```{r}
 # Load data and data transformations 
-IPEG.df <- read.csv('IPEG_fulldata_N=30.csv', header = T) %>% 
-              # Remove deleted trials
-              filter(complete.cases(Conditions)) %>%
-              # Recode conditions
-              mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
-                     Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
-                     Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
-                     Match_condition = recode(Match_condition, '0' = "Identify", '1' = "S-A-", '2' = "S-A+", '3' = "S+A-", '4' = "S+A+"),
-                     # Convert story to factor
-                     Story_ID = as.factor(Story_ID),
-                     # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
-                     HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
-                     HT_age_c = ifelse(HT_age == 'Old', 1, -1),
-                     # Create a dummy variable = for the condition and match variables
-                     dummy_img = as.numeric (Conditions == 'Imagine'),
-                     dummy_SAMM = as.numeric(Match_condition == "S-A-"),
-                     dummy_SMMAM = as.numeric(Match_condition == "S-A+"),
-                     dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
-                     dummy_SAM = as.numeric(Match_condition == "S+A+"))
+# IPEG.df <- read.csv('IPEG_fulldata_N=30.csv', header = T) %>% 
+#               # Remove deleted trials
+#               filter(complete.cases(Conditions)) %>%
+#               # Recode conditions
+#               mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
+#                      Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
+#                      Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
+#                      Match_condition = recode(Match_condition, '0' = "Identify", 
+#                                               '1' = "S-A-", 
+#                                               '2' = "S-A+", 
+#                                               '3' = "S+A-", 
+#                                               '4' = "S+A+"),
+#                      # Convert story to factor
+#                      Story_ID = as.factor(Story_ID),
+#                      # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
+#                      HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
+#                      HT_age_c = ifelse(HT_age == 'Old', 1, -1),
+#                      # Create a dummy variable = for the condition and match variables
+#                      dummy_img = as.numeric (Conditions == 'Imagine'),
+#                      dummy_SAMM = as.numeric(Match_condition == "S-A-"),
+#                      dummy_SMMAM = as.numeric(Match_condition == "S-A+"),
+#                      dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
+#                      dummy_SAM = as.numeric(Match_condition == "S+A+"))
+
+# Models 
+load('Experiment1_models.Rdata')
 ```
 
 
 ## Model 1
 ```{r}
 # Model:
-model1_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
-                   bf(Help ~ Conditions + HT_sex_c + HT_age_c + (Conditions|participant) + (Conditions|Story_ID) + (Conditions|HTFace_ID) +
-                        (Conditions|STFace_ID)) +
-                   lf(disc ~ 0 + Conditions, cmc = F),
-                      prior = c(prior(normal (0,1), class = b),
-                                prior(normal(0,1.2), class = Intercept),
-                                prior(exponential(1), class = sd),
-                                prior(lkj(1), class = cor)),
-                  iter = 7000,warmup = 2000, chains = 8, cores = 8, 
-                  seed = 67, sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
+# model1_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
+#                    bf(Help ~ Conditions + HT_sex_c + HT_age_c + (Conditions|participant) + (Conditions|Story_ID) + (Conditions|HTFace_ID) +
+#                         (Conditions|STFace_ID)) +
+#                    lf(disc ~ 0 + Conditions, cmc = F),
+#                       prior = c(prior(normal (0,1), class = b),
+#                                 prior(normal(0,1.2), class = Intercept),
+#                                 prior(exponential(1), class = sd),
+#                                 prior(lkj(1), class = cor)),
+#                   iter = 7000,warmup = 2000, chains = 8, cores = 8, 
+#                   seed = 67, sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
 
-saveRDS(model1_exp1, file = 'model1_exp1.rds')
-
-# model1_exp1 <- readRDS("model1_exp1.rds")
 # Diagnostic Checks: pp check and traceplots
 pp_check(model1_exp1)
 plot(model1_exp1)
@@ -115,18 +116,16 @@ plot(PSE_plot_exp1)[[1]] +
 ## Model 2
 ```{r}
 # Model:
-model2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
-                   bf(Help~Match_condition + HT_sex_c + HT_age_c + (Match_condition|participant) + (Match_condition|Story_ID) +
-                      (Match_condition|HTFace_ID) + (Match_condition|STFace_ID)) +
-                   lf(disc ~ 0 + Match_condition, cmc = F),
-                      prior = c(prior(normal(0,1), class = b),
-                                prior(normal(0,1.2), class = Intercept),
-                                prior(exponential(1), class = sd),
-                                prior(lkj(1), class = cor)),
-                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-saveRDS(model2_exp1, file = 'model2_exp1.rds')
+# model2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
+#                    bf(Help~Match_condition + HT_sex_c + HT_age_c + (Match_condition|participant) + (Match_condition|Story_ID) +
+#                       (Match_condition|HTFace_ID) + (Match_condition|STFace_ID)) +
+#                    lf(disc ~ 0 + Match_condition, cmc = F),
+#                       prior = c(prior(normal(0,1), class = b),
+#                                 prior(normal(0,1.2), class = Intercept),
+#                                 prior(exponential(1), class = sd),
+#                                 prior(lkj(1), class = cor)),
+#                    iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
 
-# model2_exp1 <- readRDS("model2_exp1.rds")
 # Diagnostic Checks: pp check and traceplots
 pp_check(model2_exp1)
 plot(model2_exp1)
@@ -166,10 +165,10 @@ violin_gen1 +
 violin_bayes(gen_effect_exp1, HDI_range = c(0.055, 0.945))[[2]]
 # pd
 p_direction (gen_effect_exp1.df)
-# OR
-posterior_summary(exp(gen_effect_exp1.df), probs = c(0.055, 0.945))
 # % in ROPE
 rope(gen_effect_exp1.df, ci = 1, range = c(-0.18, 0.18))
+# OR
+posterior_summary(exp(gen_effect_exp1.df), probs = c(0.055, 0.945))
 #---------------------------------------------------------------------------------------------------------------------------------------------
 # Contrasts between the four imagine helping match conditions
 cond_contrasts_exp1 <- cbind.data.frame ("S-A-<S-A+" = gen_effect_exp1.df$`S-A+` - gen_effect_exp1.df$`S-A-`, 
@@ -223,41 +222,34 @@ plot(Gen_plot_exp1)[[1]] +
 ### Model set up
 ```{r}
 # M0 model:
-m0_exp1 <- brm(data = IPEG.df, family = cumulative("logit"), 
-                  Help ~ HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
-                  prior = c(prior(normal(0,1), class = b),
-                            prior(normal(0,1.2), class = Intercept),
-                            prior(exponential(1), class = sd)), 
-                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-# saveRDS(m0_exp1, file = 'm0_exp1.rds')
-
-# m0_exp1 <- readRDS("m0_exp1.rds")
+# m0_exp1 <- brm(data = IPEG.df, family = cumulative("logit"), 
+#                   Help ~ HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
+#                   prior = c(prior(normal(0,1), class = b),
+#                             prior(normal(0,1.2), class = Intercept),
+#                             prior(exponential(1), class = sd)), 
+#                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
 
 # Mu1 model: 
-mu1_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
-                   Help ~ Match_condition + HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
-                   prior = c(prior(normal (0, 1), class = b),
-                             prior(normal(0, 1.2), class = Intercept),
-                             prior(exponential(1), class = sd)),
-                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
-# saveRDS(mu1_exp1, file = 'mu1_exp1.rds')
+# mu1_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
+#                    Help ~ Match_condition + HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
+#                    prior = c(prior(normal (0, 1), class = b),
+#                              prior(normal(0, 1.2), class = Intercept),
+#                              prior(exponential(1), class = sd)),
+#                    iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, save_all_pars = T)
 
-# mu1_exp1 <- readRDS("mu1_exp1.rds")
-## Extract posterior
+## Extract posteriors
 set.seed(67); mu1_posterior_exp1 <- posterior_samples(mu1_exp1) 
 
 # Mu2 model:
-mu2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
-              Help ~ Conditions + HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
-              prior = c(prior(normal (0, 1), class = b),
-                        prior(normal(0, 1.2), class = Intercept),
-                        prior(exponential(1), class = sd)),
-                iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, 
-                save_all_pars = T, control = list(adapt_delta = 0.99))
-# saveRDS(mu2_exp1, file = 'mu2_exp1.rds')
+# mu2_exp1 <- brm(data = IPEG.df, family = cumulative("logit"),
+#               Help ~ Conditions + HT_sex_c + HT_age_c + (1|participant) + (1|Story_ID) + (1|HTFace_ID) + (1|STFace_ID),
+#               prior = c(prior(normal (0, 1), class = b),
+#                         prior(normal(0, 1.2), class = Intercept),
+#                         prior(exponential(1), class = sd)),
+#                 iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 67, sample_prior = T, 
+#                 save_all_pars = T, control = list(adapt_delta = 0.99))
 
-# mu2_exp1 <- readRDS("mu2_exp1.rds")
-## Extract posterior
+## Extract posteriors
 set.seed(67); mu2_posterior_exp1 <- posterior_samples(mu2_exp1)
 
 # M1
@@ -303,50 +295,51 @@ print(paste0("Mu/M0: ", BF_Mu1vsM0_exp1$bf))
 ## Data setup
 ```{r}
 # Load data and data transformation
-test <- read.csv('IPEG2_fulldata_N=30.csv', header = T) %>% 
-              # Remove deleted trials
-              filter(complete.cases(Conditions)) %>%
-              # Recode conditions
-              mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
-                     Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
-                     Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
-                     Match_condition = recode(Match_condition, '0' = "Identify", 
-                                                               '1' = "HT-HS-", 
-                                                               '2' = "HT+HS-", 
-                                                               '3' = "HT-HS+", 
-                                                               '4' = "HT+HS+"),
-                     # Convert clusters to factor
-                     Sim_SID = as.factor(Sim_SID),
-                     HS_ID = as.factor(HS_ID),
-                     # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
-                     HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
-                     HT_age_c = ifelse(HT_age == 'Old', 1, -1),
-                     # Create a dummy variable for the condition and match variables
-                     dummy_img = as.numeric (Conditions == 'Imagine'),
-                     dummy_SAMM = as.numeric(Match_condition == "HT-HS-"),
-                     dummy_SMMAM = as.numeric(Match_condition == "HT+HS-"),
-                     dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
-                     dummy_SAM = as.numeric(Match_condition == "S+A+"),
-                     ORM_code = ifelse(Match_condition == 'Identify', "Identify",
-                                ifelse(Match_condition == 'HT+HS+','HT+HS+', "Imagine")),
-                     ORM_code = relevel(as.factor(ORM_code), ref = 'Identify'))
+# IPEG2.df <- read.csv('IPEG2_fulldata_N=30.csv', header = T) %>% 
+#               # Remove deleted trials
+#               filter(complete.cases(Conditions)) %>%
+#               # Recode conditions
+#               mutate(Conditions = recode(Conditions, '0' = 'Identify', '1' = 'Imagine'),
+#                      Conditions = relevel(as.factor(Conditions), ref = 'Identify'),
+#                      Match_condition = as.factor(replace(Match, Conditions == 'Identify', 0)),
+#                      Match_condition = recode(Match_condition, '0' = "Identify", 
+#                                                                '1' = "HT-HS-", 
+#                                                                '2' = "HT+HS-", 
+#                                                                '3' = "HT-HS+", 
+#                                                                '4' = "HT+HS+"),
+#                      # Convert clusters to factor
+#                      Sim_SID = as.factor(Sim_SID),
+#                      HS_ID = as.factor(HS_ID),
+#                      # Effect code sex and age of helping targets(Female = 1, male = -1; 1 = Old, -1 = Young)
+#                      HT_sex_c = ifelse(HT_sex == 'F', 1, -1),
+#                      HT_age_c = ifelse(HT_age == 'Old', 1, -1),
+#                      # Create a dummy variable for the condition and match variables
+#                      dummy_img = as.numeric (Conditions == 'Imagine'),
+#                      dummy_SAMM = as.numeric(Match_condition == "HT-HS-"),
+#                      dummy_SMMAM = as.numeric(Match_condition == "HT+HS-"),
+#                      dummy_SMAMM = as.numeric(Match_condition == "S+A-"),
+#                      dummy_SAM = as.numeric(Match_condition == "S+A+"),
+#                      ORM_code = ifelse(Match_condition == 'Identify', "Identify",
+#                                 ifelse(Match_condition == 'HT+HS+','HT+HS+', "Imagine")),
+#                      ORM_code = relevel(as.factor(ORM_code), ref = 'Identify'))
+
+# Models 
+load('Experiment2_models.Rdata')
 ```
 
 ## Model 1
 ```{r}
-model1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
-               bf(Help ~ Conditions + HT_sex_c + HT_age_c + (Conditions|participant) + (Conditions|Sim_SID) + (Conditions|HTFace_ID) +
-                 (Conditions|STFace_ID) + (Conditions|HS_ID)) +
-               lf(disc ~ 0 + Conditions, cmc = F),
-                  prior = c(prior(normal(0,1), class = b),
-                            prior(normal(0,1.2), class = Intercept),
-                            prior(exponential(1), class = sd),
-                            prior(lkj(1), class = cor)),
-               iter = 7000,warmup = 2000, chains = 8, cores = 8, seed = 20, 
-               sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
-#saveRDS(model1_exp2, file = 'model1_exp2.rds')
+# model1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+#                bf(Help ~ Conditions + HT_sex_c + HT_age_c + (Conditions|participant) + (Conditions|Sim_SID) + (Conditions|HTFace_ID) +
+#                  (Conditions|STFace_ID) + (Conditions|HS_ID)) +
+#                lf(disc ~ 0 + Conditions, cmc = F),
+#                   prior = c(prior(normal(0,1), class = b),
+#                             prior(normal(0,1.2), class = Intercept),
+#                             prior(exponential(1), class = sd),
+#                             prior(lkj(1), class = cor)),
+#                iter = 7000,warmup = 2000, chains = 8, cores = 8, seed = 20, 
+#                sample_prior = T,save_all_pars = T, control = list(adapt_delta = 0.99))
 
-# model1_exp2 <- readRDS("model1_exp2.rds")
 # Diagnostic Checks: pp check and traceplots
 pp_check(model1_exp2)
 plot(model1_exp2)
@@ -374,7 +367,7 @@ latent_SD(posterior_m1_exp2)
 ```{r}
 # Plot the predicted probability of each category on the outcome measure for each condition
 PSE_plot_exp2 <- conditional_effects(model1_exp2, categorical = T)
-plot(PSE_plot_exp1)[[1]] +
+plot(PSE_plot_exp2)[[1]] +
   scale_x_discrete(labels = c("Control", "Imagine Helping")) +
   theme_classic() +
   xlab("Experimental Condition") +
@@ -384,19 +377,17 @@ plot(PSE_plot_exp1)[[1]] +
 
 ## Model 2 
 ```{r}
-model2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
-                   bf(Help ~ Match_condition + HT_sex_c + HT_age_c + (Match_condition|participant) + (Match_condition|Sim_SID) +  
-                     (Match_condition|HTFace_ID) + (Match_condition|STFace_ID) + (1|HS_ID)) +
-                   lf(disc ~ 0 + Match_condition, cmc = F),
-                      prior = c(prior(normal(0,1), class = b),
-                                prior(normal(0,1.2), class = Intercept),
-                                prior(exponential(1), class = sd),
-                                prior(lkj(1), class = cor)),
-                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
-                  sample_prior =T, save_all_pars = T, control = list(adapt_delta = 0.99))
-# saveRDS(model2_exp2, file = 'model2_exp2.rds')
+# model2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+#                    bf(Help ~ Match_condition + HT_sex_c + HT_age_c + (Match_condition|participant) + (Match_condition|Sim_SID) +  
+#                      (Match_condition|HTFace_ID) + (Match_condition|STFace_ID) + (1|HS_ID)) +
+#                    lf(disc ~ 0 + Match_condition, cmc = F),
+#                       prior = c(prior(normal(0,1), class = b),
+#                                 prior(normal(0,1.2), class = Intercept),
+#                                 prior(exponential(1), class = sd),
+#                                 prior(lkj(1), class = cor)),
+#                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+#                   sample_prior =T, save_all_pars = T, control = list(adapt_delta = 0.99))
 
-# model2_exp2 <- readRDS("model2_exp2.rds")
 # Diagnostic Checks: pp check and traceplots
 pp_check(model2_exp2)
 plot(model2_exp2)
@@ -462,7 +453,6 @@ contrast_plot2 +
                               "HT+HS-<HT+HS+", 
                               "HT-HS+<HT+HS+"))
   
-
 # Summary
 violin_bayes(cond_contrasts_exp2, HDI_range = c(0.055, 0.945))[[2]]
 # pd
@@ -492,39 +482,35 @@ plot(Gen_plot_exp2)[[1]] +
 ### Model set up
 ```{r}
 # M0 model:
-m0_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
-               Help ~ HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
-                  prior = c(prior(normal(0, 1), class = b),
-                            prior(normal(0, 1.2), class = Intercept),
-                            prior(exponential(1), class = sd)),
-                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20,
-                  sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
-#saveRDS(m0_exp2, file = 'm0_exp2.rds')
+# m0_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+#                Help ~ HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+#                   prior = c(prior(normal(0, 1), class = b),
+#                             prior(normal(0, 1.2), class = Intercept),
+#                             prior(exponential(1), class = sd)),
+#                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20,
+#                   sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
 
 # Mu1 model:
-mu1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
-                Help ~ Match_condition + HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
-                   prior = c(prior(normal(0, 1), class = b),
-                            prior(normal(0, 1.2), class = Intercept),
-                            prior(exponential(1), class = sd)),
-                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
-                  sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
-#saveRDS(mu1_exp2, file = 'mu1_exp2.rds')
+# mu1_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+#                 Help ~ Match_condition + HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+#                    prior = c(prior(normal(0, 1), class = b),
+#                             prior(normal(0, 1.2), class = Intercept),
+#                             prior(exponential(1), class = sd)),
+#                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+#                   sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
 
-# mu1_exp2 <- readRDS("mu1_exp2.rds")
+# Posteriors
 set.seed(20); mu1_posterior_exp2 <- posterior_samples(mu1_exp2) 
 
 # Mu2 model:
-mu2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
-                  Help ~ ORM_code + HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
-                  prior = c(prior(normal (0, 1), class = b),
-                            prior(normal(0, 1.2), class = Intercept),
-                            prior(exponential(1), class = sd)),
-                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
-                  sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
-#saveRDS(mu2_exp2, file = 'mu2_exp2.rds')
-
-# mu2_exp2 <- readRDS("mu2_exp2.rds")
+# mu2_exp2 <- brm(data = IPEG2.df, family = cumulative("logit"),
+#                   Help ~ ORM_code + HT_sex_c + HT_age_c + (1|participant) + (1|Sim_SID) + (1|HTFace_ID) + (1|STFace_ID) + (1|HS_ID),
+#                   prior = c(prior(normal (0, 1), class = b),
+#                             prior(normal(0, 1.2), class = Intercept),
+#                             prior(exponential(1), class = sd)),
+#                   iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+#                   sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
+# Posteriors
 set.seed(20); mu2_posterior_exp2 <- posterior_samples(mu2_exp2) 
 
 # M1 model:
@@ -535,8 +521,7 @@ m1_exp2 <- (mu1_posterior_exp2[, "b_Match_conditionHTMHSM"] > 0) &
            (abs(mu1_posterior_exp2[, "b_Match_conditionHTPHSM"] - mu1_posterior_exp2[, "b_Match_conditionHTMHSP"]) > 0.18) &
            (mu1_posterior_exp2[, "b_Match_conditionHTPHSM"] > mu1_posterior_exp2[, "b_Match_conditionHTPHSP"]) &
            (mu1_posterior_exp2[, "b_Match_conditionHTMHSP"] > mu1_posterior_exp2[, "b_Match_conditionHTPHSP"])   
-           
-           
+  
 # M2 model: 
 m2_exp2 <- (mu2_posterior_exp2[, "b_ORM_codeImagine"] > 0) |
            (abs(mu2_posterior_exp2[, "b_ORM_codeImagine"]) <= 0.18) &
@@ -569,6 +554,97 @@ print(paste0("M1/M0: ", BF_M1vsM0_exp2))
 print(paste0("M1/Mu: ", BF_M1vsMu1_exp2))
 
 print(paste0("M0/Mu: ", 1/BF_Mu1vsM0_exp2$bf))
+```
+
+# Contrast PSE between experiments 
+```{r}
+Peng_study1 <- readRDS(file = "Peng_study1.rds")
+
+# Violin Plot of each experiment
+PSE <- cbind.data.frame('Peng et al (study 1)' = Peng_study1$b_ConditionImagine,
+                        'Experiment 1' = posterior_m1_exp1$b_ConditionsImagine,
+                        'Experiment 2'= posterior_m1_exp2$b_ConditionsImagine)
+PSE.df <- PSE
+PSE <- PSE %>% gather('Peng et al (study 1)', 'Experiment 1', 'Experiment 2', key = Condition, value = Posterior)
+PSE$Condition <- factor(PSE$Condition, levels = c('Peng et al (study 1)', 'Experiment 1', 'Experiment 2'))
+violin_PSE <- violin_bayes(PSE, HDI_range = c(0.055, 0.945) )[[1]]
+violin_PSE +
+  labs(x = "Experiment", y = "Magnitude of PSE (logit)") +
+  scale_fill_manual(values = c(palette[3], palette[5], palette[6])) +
+  scale_color_manual(values = c(palette[3], palette[5], palette[6]))
+
+# Summaries
+violin_bayes(PSE, HDI_range = c(0.055, 0.945))[[2]]
+# pd
+p_direction(PSE.df)
+# % in ROPE
+rope(PSE.df, ci = 1, range = c(-0.18, 0.18))
+#-------------------------------------------------------------------------------------------------------------------------
+# Contrasts between conditions across experiments
+Peng_exp1 <- PSE.df$`Peng et al (study 1)` - PSE.df$`Experiment 1`
+Peng_exp2 <- PSE.df$`Peng et al (study 1)` - PSE.df$`Experiment 2`
+
+PSE_dif <- cbind.data.frame("Peng et al (study 1) > Experiment 1" = Peng_exp1,
+                            "Peng et al (study 1) > Experiment 2" = Peng_exp2)
+PSE_dif.df <- PSE_dif
+PSE_dif <- PSE_dif %>% gather("Peng et al (study 1) > Experiment 1" ,
+                              "Peng et al (study 1) > Experiment 2", key = Condition, value = Posterior)
+
+violin_dif <- violin_bayes(PSE_dif, HDI_range = c(0.055, 0.945))[[1]]
+violin_dif +
+  labs(x = "Experiment Contrast", y = "logit") +
+  scale_fill_manual(values = c(palette[1], palette[2])) +
+  scale_color_manual(values = c(palette[1], palette[2]))
+  
+
+# Summaries
+violin_bayes(PSE_dif, HDI_range = c(0.055, 0.945))[[2]]
+# pd
+p_direction(PSE_dif.df)
+# % in ROPE
+rope(PSE_dif.df, ci = 1, range = c(-0.18, 0.18))
+```
+## Contrast difference between Experiment 1 and Experiment 2
+```{r}
+ORM_model <- brm(data = IPEG2.df, family = cumulative("logit"),
+                  Help ~ ORM_code + HT_sex_c + HT_age_c + (ORM_code|participant) + (ORM_code|Sim_SID) +
+                  (ORM_code|HTFace_ID) + (ORM_code|STFace_ID) + (ORM_code|HS_ID),
+                  prior = c(prior(normal (0, 1), class = b),
+                            prior(normal(0, 1.2), class = Intercept),
+                            prior(exponential(1), class = sd)),
+                  iter = 7000, warmup = 2000, chains = 8, cores = 8, seed = 20, 
+                  sample_prior = T, save_all_pars = T, control = list(adapt_delta = 0.99))
+ORM_posterior <- posterior_samples(ORM_model)
+
+
+exp1_exp2 <- PSE.df$`Experiment 1` - PSE.df$`Experiment 2`
+# one that include HS+HT+
+posterior_summary(exp1_exp2)
+p_direction(exp1_exp2)
+rope(exp1_exp2, ci = 1, range = c(-0.18, 0.18))
+prior <- rnorm(1e5, mean = 0, sd = 1)
+BF_exp1vsexp2 <- bayesfactor_parameters(posterior = exp1_exp2, 
+                                        prior = prior, 
+                                        direction = "two-sided", 
+                                        null = c(-0.18, 0.18))
+## Evidence for null
+1/BF_exp1vsexp2$BF
+library(see)
+plot(BF_exp1vsexp2) + theme_classic()
+
+
+# one without HS+HT+
+exp1_exp2_exclude <- PSE.df$`Experiment 1` - ORM_posterior$b_ORM_codeImagine
+p_direction(exp1_exp2_exclude)
+rope(exp1_exp2_exclude, ci = 1, range = c(-0.18, 0.18))
+BF_exp1vsexp2_exclude <- bayesfactor_parameters(posterior = exp1_exp2_exclude, 
+                                        prior = prior, 
+                                        direction = "two-sided", 
+                                        null = c(-0.18, 0.18))
+## Evidence against null
+BF_exp1vsexp2_exclude$BF
+library(see)
+plot(BF_exp1vsexp2_exclude) + theme_classic()
 ```
 
 
